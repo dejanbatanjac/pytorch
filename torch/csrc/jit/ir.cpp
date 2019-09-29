@@ -178,8 +178,8 @@ void Node::printAttrValue(std::ostream& out, const Symbol& name) const {
   }
 }
 
-void Node::printAttributes(std::ostream& out, bool ignore_subgraph = false)
-    const {
+void Node::printAttributes(std::ostream &out,
+                           bool ignore_subgraph = false) const {
   out << "[";
   auto names = attributeNames();
   int i = 0;
@@ -215,11 +215,10 @@ static std::ostream& indent(std::ostream& out, size_t level) {
   return out;
 }
 
-std::ostream& Node::print(
-    std::ostream& out,
-    size_t level,
-    std::vector<const Node*>* groups,
-    bool print_source_locations) const {
+std::ostream &Node::print(std::ostream &out, size_t level,
+                          std::vector<const Node *> *groups,
+                          bool print_source_locations, bool print_attributes,
+                          bool print_scopes, bool print_body) const {
   auto outs = outputs();
   indent(out, level) << const_value_list_with_types(outs);
   out << " = ";
@@ -227,7 +226,7 @@ std::ostream& Node::print(
     auto* pyOp = static_cast<const ::torch::jit::PythonOp*>(this);
     out << "^" << pyOp->name();
     pyOp->writeScalars(out);
-  } else {
+  } else if (print_attributes) {
     if (hasAttribute(attr::Subgraph) && groups) {
       out << kind().toQualString() << "_" << groups->size();
       if (numAttributes() > 1 && kind() != prim::DifferentiableGraph) {
@@ -244,10 +243,13 @@ std::ostream& Node::print(
   }
 
   out << "(" << inputs() << ")";
-  std::string scName = scopeName();
-  if (!scName.empty()) {
-    out << ", ";
-    out << "scope: " << scName;
+
+  if (print_scopes) {
+    std::string scName = scopeName();
+    if (!scName.empty()) {
+      out << ", ";
+      out << "scope: " << scName;
+    }
   }
 
   // In debug print, append file:line:col as a comment after each node
@@ -258,6 +260,10 @@ std::ostream& Node::print(
       std::tie(filename, line, col) = *file_line_col;
       out << " # " << filename << ":" << line << ":" << col;
     }
+  }
+
+  if (!print_body) {
+    return out;
   }
 
   out << "\n";
@@ -936,7 +942,7 @@ bool Node::hasSideEffects() const {
   }
 
   switch (op->aliasAnalysisKind()) {
-    case AliasAnalysisKind::PURE:
+    case AliasAnalysisKind::PURE_FUNCTION:
       return false;
     case AliasAnalysisKind::FROM_SCHEMA:
       return false;
@@ -1336,9 +1342,9 @@ Node* Graph::createAutogradZero() {
   return create(prim::AutogradZero);
 }
 
-Node* Graph::createNone(TypePtr typ) {
+Node* Graph::createNone() {
   Node* n = create(prim::Constant);
-  n->output()->setType(OptionalType::create(std::move(typ)));
+  n->output()->setType(NoneType::get());
   return n;
 }
 
@@ -1494,7 +1500,7 @@ Node* Graph::createLoad(const std::string& name, const TypePtr& type) {
 
 Value* Graph::insertFunctionCall(
     Function* callee,
-    script::MatchedSchema& matched) {
+    const script::MatchedSchema& matched) {
   std::string func_name = callee->name();
   Value* fn_constant = insertNode(create(prim::Constant))
                            ->s_(attr::name, func_name)
@@ -1510,7 +1516,7 @@ Value* Graph::insertFunctionCall(
 
 Value* Graph::insertMethodCall(
     std::string method_name,
-    script::MatchedSchema& matched) {
+    const script::MatchedSchema& matched) {
   Value* result = insertNode(create(prim::CallMethod, matched.inputs))
                       ->s_(attr::name, std::move(method_name))
                       ->output()
@@ -1541,11 +1547,10 @@ Node* Graph::createClone(
 
 Value* Graph::insertConstant(
     IValue val,
-    const TypePtr& result_type,
     c10::optional<SourceRange> loc,
     c10::optional<ScopePtr> scope) {
   return jit::insertConstant(
-      *this, std::move(val), result_type, std::move(loc), std::move(scope));
+      *this, std::move(val), std::move(loc), std::move(scope));
 }
 
 std::string Graph::toString(bool print_source_locations) const {

@@ -85,8 +85,8 @@ class QFunctional(torch.nn.Module):
     .. Examples::
 
         >>> q_add = QFunctional('add')
-        >>> a = torch.quantize_linear(torch.tensor(3.0), 1.0, 0, torch.qint32)
-        >>> b = torch.quantize_linear(torch.tensor(4.0), 1.0, 0, torch.qint32)
+        >>> a = torch.quantize_per_tensor(torch.tensor(3.0), 1.0, 0, torch.qint32)
+        >>> b = torch.quantize_per_tensor(torch.tensor(4.0), 1.0, 0, torch.qint32)
         >>> q_add.add(a, b)  # Equivalent to ``torch.ops.quantized.add(3, 4)
 
     Valid operation names:
@@ -107,11 +107,8 @@ class QFunctional(torch.nn.Module):
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
 
-        self.scale = float(state_dict[prefix + 'scale'])
-        state_dict.pop(prefix + 'scale')
-
-        self.zero_point = int(state_dict[prefix + 'zero_point'])
-        state_dict.pop(prefix + 'zero_point')
+        self.scale = float(state_dict.pop(prefix + 'scale'))
+        self.zero_point = int(state_dict.pop(prefix + 'zero_point'))
         super(QFunctional, self)._load_from_state_dict(state_dict, prefix, local_metadata, False,
                                                        missing_keys, unexpected_keys, error_msgs)
 

@@ -79,16 +79,6 @@ class ConvBn2d(nn.Conv2d):
         if hasattr(self, 'gamma'):
             self.reset_bn_parameters()
 
-    def enable_fake_quant(self):
-        self.observer.enable()
-        self.weight_fake_quant.enable()
-        return self
-
-    def disable_fake_quant(self):
-        self.observer.disable()
-        self.weight_fake_quant.disable()
-        return self
-
     def _forward(self, input):
         # exponential_average_factor is self.momentum set to
         # (when it is available) only so that if gets updated

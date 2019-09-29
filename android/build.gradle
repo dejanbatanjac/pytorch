@@ -21,6 +21,9 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:3.3.2'
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:${GRADLE_BINTRAY_PLUGIN_VERSION}"
+        classpath "com.github.dcendents:android-maven-gradle-plugin:${ANDROID_MAVEN_GRADLE_PLUGIN_VERSION}"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.9.8"
     }
 }
 
@@ -30,6 +33,8 @@ allprojects {
         jcenter()
     }
 }
+
+ext.isPublishing = { ['uploadArchives', 'bintrayUpload'].any { gradle.startParameter.taskNames.contains(it) } }
 
 ext.deps = [
         jsr305: 'com.google.code.findbugs:jsr305:3.0.1',

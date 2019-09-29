@@ -1903,7 +1903,9 @@ add_docstr_all('q_per_channel_scales',
 q_per_channel_scales() -> Tensor
 
 Given a Tensor quantized by linear (affine) per-channel quantization,
-returns a Tensor of scales of the underlying quantizer().
+returns a Tensor of scales of the underlying quantizer. It has the number of
+elements that matches the corresponding dimensions (from q_per_channel_axis) of
+the tensor.
 """)
 
 add_docstr_all('q_per_channel_zero_points',
@@ -1911,7 +1913,17 @@ add_docstr_all('q_per_channel_zero_points',
 q_per_channel_zero_points() -> Tensor
 
 Given a Tensor quantized by linear (affine) per-channel quantization,
-returns a tensor of zero_points of the underlying quantizer().
+returns a tensor of zero_points of the underlying quantizer. It has the number of
+elements that matches the corresponding dimensions (from q_per_channel_axis) of
+the tensor.
+""")
+
+add_docstr_all('q_per_channel_axis',
+               r"""
+q_per_channel_axis() -> int
+
+Given a Tensor quantized by linear (affine) per-channel quantization,
+returns the index of dimension on which per-channel quantization is applied.
 """)
 
 add_docstr_all('random_',
@@ -2032,7 +2044,7 @@ requires_grad_(requires_grad=True) -> Tensor
 Change if autograd should record operations on this tensor: sets this tensor's
 :attr:`requires_grad` attribute in-place. Returns this tensor.
 
-:func:`require_grad_`'s main use case is to tell autograd to begin recording
+:func:`requires_grad_`'s main use case is to tell autograd to begin recording
 operations on a Tensor ``tensor``. If ``tensor`` has ``requires_grad=False``
 (because it was obtained through a DataLoader, or required preprocessing or
 initialization), ``tensor.requires_grad_()`` makes it so that autograd will
